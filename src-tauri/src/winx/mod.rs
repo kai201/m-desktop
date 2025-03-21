@@ -16,3 +16,7 @@ pub fn get_windows() -> Vec<ActiveWindow> {
     println!("get_windows");
     api.get_windows()
 }
+pub fn activate(window_id: String) {
+    let api = init_api();
+    api.activate(window_id);
+}

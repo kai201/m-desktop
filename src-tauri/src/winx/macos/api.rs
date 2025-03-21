@@ -34,16 +34,21 @@ impl Api for MacosAPI {
 
     fn activate(&self, window_id: String) {
         let process_id = window_id.parse::<i32>().unwrap();
-       
+
         let app: &NSRunningApplication = unsafe {
             msg_send![
               class!(NSRunningApplication),
               runningApplicationWithProcessIdentifier: process_id
             ]
         };
-
-        // unsafe { msg_send![app, activateWithOptions: 1] };
-
+        let options = if cfg!(target_os = "macos_10_15") {
+            0x1 | 0x2
+        } else {
+            0x1
+        };
+        unsafe {
+            let _: () = msg_send![app, activateWithOptions: options];
+        }
     }
 }
 

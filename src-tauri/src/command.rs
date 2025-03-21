@@ -1,6 +1,6 @@
 use enigo::{Enigo, Keyboard, Settings};
 
-use crate::winx::{get_active_window, get_windows};
+use crate::winx::{activate, get_active_window, get_windows};
 
 #[tauri::command]
 pub fn send_text(txt: String) {
@@ -8,9 +8,12 @@ pub fn send_text(txt: String) {
     let ws = get_windows();
 
     for n in ws {
-        println!("{}", n.app_name)
+        println!("{} , {}", n.process_id, n.app_name)
     }
+
+    activate(String::from("35815"));
     println!("{}", txt);
+
     // if let Ok(mut enigo) = Enigo::new(&Settings::default()) {
     //     enigo
     //         .text(&txt)
