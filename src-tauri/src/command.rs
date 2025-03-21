@@ -1,12 +1,20 @@
 use enigo::{Enigo, Keyboard, Settings};
 
+use crate::winx::{get_active_window, get_windows};
+
 #[tauri::command]
 pub fn send_text(txt: String) {
-    println!("{}", txt);
-    if let Ok(mut enigo) = Enigo::new(&Settings::default()) {
-        enigo
-            .text(&txt)
-            .map_err(|e| format!("鼠标操作失败: {}", e))
-            .unwrap();
+    // get_active_window();
+    let ws = get_windows();
+
+    for n in ws {
+        println!("{}", n.app_name)
     }
+    println!("{}", txt);
+    // if let Ok(mut enigo) = Enigo::new(&Settings::default()) {
+    //     enigo
+    //         .text(&txt)
+    //         .map_err(|e| format!("鼠标操作失败: {}", e))
+    //         .unwrap();
+    // }
 }
