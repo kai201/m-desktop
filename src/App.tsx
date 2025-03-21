@@ -23,6 +23,8 @@ function App() {
       </div>
       <p>Click on the Tauri, Vite, and React logos to learn more.</p>
       <input type="text" onFocus={hanlderSend} />
+
+      <button onClick={hanlderSend}>test</button>
     </main>
   );
 }
