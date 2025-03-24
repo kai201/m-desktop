@@ -73,8 +73,8 @@ pub fn stop_window(app: AppHandle) {
 }
 
 #[tauri::command]
-pub fn get_win_all() -> Vec<ActiveWindow>{
-    println!("{}",std::process::id());
+pub fn get_win_all() -> Vec<ActiveWindow> {
+    println!("{}", std::process::id());
     get_windows()
 }
 
@@ -83,7 +83,10 @@ pub fn send_text(app: AppHandle, txt: String) {
     let state = app.state::<AppState>();
     let mut guard = state.window.lock().unwrap();
     if let Some(win) = guard.take() {
+        #[cfg(target_os = "macos")]
         activate(win.process_id.to_string());
+        #[cfg(target_os = "windows")]
+        activate(win.window_id.clone());
         thread::sleep(Duration::from_millis(500));
         let mut opts = Settings::default();
         opts.open_prompt_to_get_permissions = false;
@@ -94,6 +97,4 @@ pub fn send_text(app: AppHandle, txt: String) {
                 .unwrap();
         }
     }
-    thread::sleep(Duration::from_millis(1000));
-    activate(std::process::id().to_string());
 }
