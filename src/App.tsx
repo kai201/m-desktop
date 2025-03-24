@@ -6,6 +6,15 @@ function App() {
   async function hanlderSend() {
     invoke("send_text", { txt: "test...." });
   }
+  async function hanlderStart() {
+    invoke("start_window");
+  }
+  async function hanlderStop() {
+    invoke("stop_window");
+  }
+  async function hanlderWins() {
+    invoke("get_win_all");
+  }
   return (
     <main className="container">
       <h1>Welcome to Tauri + React</h1>
@@ -25,6 +34,9 @@ function App() {
       <input type="text" onFocus={hanlderSend} />
 
       <button onClick={hanlderSend}>test</button>
+      <button onClick={hanlderWins}>windows</button>
+      <button onClick={hanlderStart}>start</button>
+      <button onClick={hanlderStop}>stop</button>
     </main>
   );
 }

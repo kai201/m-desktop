@@ -1,19 +1,27 @@
 mod core;
+#[cfg(target_os = "macos")]
 mod macos;
 
-use core::{ActiveWindow, Api};
+#[cfg(target_os = "windows")]
+mod win32;
 
+use core::Api;
+
+#[cfg(target_os = "macos")]
 use macos::init_api;
 
-pub fn get_active_window() {
+#[cfg(target_os = "windows")]
+use win32::init_api;
+
+pub use core::{ActiveWindow, WindowPosition};
+
+pub fn get_active_window() -> ActiveWindow {
     let api = init_api();
-    println!("get_active_window");
-    api.get_active_window();
+    api.get_active_window()
 }
 
 pub fn get_windows() -> Vec<ActiveWindow> {
     let api = init_api();
-    println!("get_windows");
     api.get_windows()
 }
 pub fn activate(window_id: String) {
