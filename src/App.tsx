@@ -1,8 +1,25 @@
 import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 
 function App() {
+
+
+  useEffect(() => {
+    let unlisten: () => void;
+
+    (async () => {
+      unlisten = await listen("capture", (e) => {
+        console.log("start? ....");
+        console.log(e.payload);
+        let data = e.payload as any; 
+      });
+    })();
+
+    return () => unlisten?.();
+  }, []);
   async function hanlderSend() {
     invoke("send_text", { txt: "test...." });
   }

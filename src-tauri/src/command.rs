@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use enigo::{Enigo, Keyboard, Settings};
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::winx::ActiveWindow;
 use crate::{
@@ -19,10 +19,11 @@ pub fn start_window(app: AppHandle) {
         return; // 避免重复启动
     }
     println!("start");
-    state.is_capture.store(true, Ordering::Relaxed);
 
+    state.is_capture.store(true, Ordering::Relaxed);
     let flag = state.is_capture.clone();
     let win = state.window.clone();
+    
     let exe_list = vec![
         String::from("微信"),
         String::from("WeChat"),
@@ -38,17 +39,6 @@ pub fn start_window(app: AppHandle) {
                 thread::sleep(Duration::from_millis(200)); // 每秒检查一次
                 continue;
             }
-            println!(
-                "Name: {}, Title: {},WinName:{},HW:{},X:{},Y:{},H:{},W:{}",
-                active_window.app_name,
-                active_window.title,
-                active_window.win_name,
-                active_window.window_id,
-                active_window.position.x,
-                active_window.position.y,
-                active_window.position.height,
-                active_window.position.width
-            );
 
             let app_name = active_window.app_name.clone();
 
@@ -58,6 +48,8 @@ pub fn start_window(app: AppHandle) {
                 *win.lock().unwrap() = None;
                 continue;
             }
+
+            app.emit("capture", active_window.clone()).unwrap();
 
             *win.lock().unwrap() = Some(active_window);
 

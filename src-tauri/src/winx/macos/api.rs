@@ -134,7 +134,7 @@ fn get_windows_informations(only_active: bool) -> Vec<ActiveWindow> {
             }
         };
 
-        let exec_name: String = {
+        let win_name: String = {
             match path.is_empty() {
                 true => match std::path::Path::new(&path).file_name() {
                     Some(os_str) => match os_str.to_str() {
@@ -153,7 +153,7 @@ fn get_windows_informations(only_active: bool) -> Vec<ActiveWindow> {
         windows.push(ActiveWindow {
             app_name: app_name.to_owned(),
             title,
-            exec_name,
+            win_name,
             window_id: window_id.to_string(),
             process_id: process_id as u32,
             memory: memory as u32,
