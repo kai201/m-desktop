@@ -2,8 +2,7 @@ use std::thread;
 use std::time::Duration;
 
 use enigo::{Enigo, Keyboard, Settings};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager};
 
 use crate::winx::ActiveWindow;
@@ -40,9 +39,10 @@ pub fn start_window(app: AppHandle) {
                 continue;
             }
             println!(
-                "Name: {}, Title: {},HW:{},X:{},Y:{},H:{},W:{}",
+                "Name: {}, Title: {},WinName:{},HW:{},X:{},Y:{},H:{},W:{}",
                 active_window.app_name,
                 active_window.title,
+                active_window.win_name,
                 active_window.window_id,
                 active_window.position.x,
                 active_window.position.y,

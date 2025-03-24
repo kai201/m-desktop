@@ -3,13 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 use windows::{
-    core::{w, HSTRING, PCWSTR, PWSTR},
+    core::{w, Interface, HSTRING, PCWSTR, PWSTR},
     Win32::{
         Foundation::*,
         Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_EXTENDED_FRAME_BOUNDS},
         Storage::FileSystem::{GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW},
         System::{Com::*, StationsAndDesktops::EnumDesktopWindows, Threading::*, Variant::VARIANT},
-        UI::WindowsAndMessaging::*,
+        UI::{Accessibility::*, WindowsAndMessaging::*},
     },
 };
 
@@ -28,7 +28,7 @@ impl Api for Win32API {
         let active_window_hwnd = get_foreground_window();
         let active_window_position = get_window_position(active_window_hwnd).unwrap();
         let mut active_window_title = String::from("");
-        let mut exec_name = String::from("");
+        let mut win_name = String::from("");
         let mut app_name = String::from("");
         let mut process_id: u32 = 0;
         unsafe { GetWindowThreadProcessId(active_window_hwnd, Some(&mut process_id as *mut u32)) };
@@ -40,13 +40,18 @@ impl Api for Win32API {
             app_name = get_process_name(&process_path).unwrap();
         }
 
+        if vec![String::from("微信"), String::from("WeChat")].contains(&app_name) {
+            if let Ok(title) = get_window_title_wx(active_window_hwnd) {
+                win_name = title;
+            }
+        }
         let active_window = ActiveWindow {
             title: active_window_title.clone(),
             app_name,
             position: active_window_position,
             process_id: process_id,
             window_id: format!("0x{:X}", active_window_hwnd.0 as usize),
-            exec_name,
+            win_name,
             memory: 0,
         };
         active_window
@@ -75,11 +80,11 @@ impl Api for Win32API {
                 position: active_window_position,
                 process_id: process_id,
                 window_id: format!("0x{:X}", hwnd.0 as usize),
-                exec_name: "None".to_string(),
+                win_name: "None".to_string(),
                 memory: 0,
             };
             if !(active_window.title.is_empty()
-                && active_window.exec_name.to_lowercase().eq(&"explorer"))
+                && active_window.win_name.to_lowercase().eq(&"explorer"))
             {
                 windows.push(active_window);
             }
@@ -111,6 +116,36 @@ fn get_window_title(hwnd: HWND) -> Result<String, ()> {
         title = String::from_utf16_lossy(&v[0..(title_len as usize)]);
     };
     Ok(title)
+}
+
+fn get_window_title_wx(hwnd: HWND) -> windows::core::Result<String> {
+    unsafe {
+        let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL)?;
+        let element: IUIAutomationElement = automation.ElementFromHandle(hwnd)?;
+
+        let condtion =
+            automation.CreatePropertyCondition(UIA_NamePropertyId, &VARIANT::from("会话"))?;
+
+        let root_el = element.FindFirst(TreeScope_Descendants, &condtion)?;
+        let elements = root_el.FindAll(TreeScope_Children, &automation.CreateTrueCondition()?)?;
+        let count = elements.Length()?;
+
+        for i in 0..count {
+            let elem: IUIAutomationElement = elements.GetElement(i)?;
+
+            let title: windows::core::BSTR = elem.CurrentName()?;
+
+            let has: IUIAutomationSelectionItemPattern =
+                elem.GetCurrentPattern(UIA_SelectionItemPatternId)?.cast()?;
+
+            if has.CurrentIsSelected()?.as_bool() {
+                let title_str = title.to_string();
+                return Ok(title_str);
+            }
+        }
+    }
+
+    Ok(String::new())
 }
 
 fn get_foreground_window() -> HWND {

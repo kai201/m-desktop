@@ -12,7 +12,7 @@ pub struct WindowPosition {
 pub struct ActiveWindow {
     pub title: String,
     pub app_name: String,
-    pub exec_name: String,
+    pub win_name: String,
     pub window_id: String,
     pub process_id: u32,
     pub memory: u32,
@@ -24,7 +24,7 @@ impl ActiveWindow {
         Self {
             title: "".to_string(),
             app_name: "".to_string(),
-            exec_name: "".to_string(),
+            win_name: "".to_string(),
             window_id: "".to_string(),
             process_id: 0,
             memory: 0,
