@@ -10,7 +10,7 @@ pub struct AppState {
     pub is_capture: Arc<AtomicBool>,
     pub data: Arc<Mutex<HashMap<String, String>>>, // 线程安全的字典
     pub window: Arc<Mutex<Option<ActiveWindow>>>,
-    pub wxplus: Arc<Mutex<Option<Child>>>,
+    pub background_task: Arc<Mutex<Option<Child>>>,
 }
 
 impl AppState {
@@ -19,7 +19,7 @@ impl AppState {
             is_capture: Arc::new(AtomicBool::new(false)),
             data: Arc::new(Mutex::new(HashMap::new())),
             window: Arc::new(Mutex::new(None)),
-            wxplus: Arc::new(Mutex::new(None)),
+            background_task: Arc::new(Mutex::new(None)),
         }
     }
 }

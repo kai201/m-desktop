@@ -3,10 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 
 function App() {
-
-
   useEffect(() => {
     let unlisten: () => void;
 
@@ -14,20 +13,29 @@ function App() {
       unlisten = await listen("capture", (e) => {
         console.log("start? ....");
         console.log(e.payload);
-        let data = e.payload as any; 
+        let data = e.payload as any;
       });
     })();
+    
+    initOnApp();
 
     return () => unlisten?.();
   }, []);
+
+  async function initOnApp() {
+    await onOpenUrl((urls) => {
+      console.log("deep link:", urls);
+    });
+  }
+
   async function hanlderSend() {
     invoke("send_text", { txt: "test...." });
   }
   async function hanlderStart() {
-    invoke("start_window");
+    invoke("window_start");
   }
   async function hanlderStop() {
-    invoke("stop_window");
+    invoke("window_stop");
   }
   async function hanlderWins() {
     invoke("get_win_all");
