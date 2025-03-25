@@ -36,6 +36,7 @@
   },
   "plugins": {
     "deep-link": {
+      "windowsProtocol": true,
       "desktop": {
         "schemes": ["ahelp"]
       }

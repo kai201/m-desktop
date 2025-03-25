@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod command;
+mod constants;
 mod data;
 mod utils;
 mod winx;
@@ -17,7 +18,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(data::AppState::default())
-        .setup(|app| {
+        .setup(|_app| {
             // let main_window = app.get_webview_window("main").unwrap();
 
             // if let Some(current_monitor) = main_window.current_monitor()? {
@@ -27,7 +28,7 @@ pub fn run() {
             //     main_window.set_size(tauri::LogicalSize::new(400 as f64, screen_height))?;
             //     // main_window.set_position(tauri::Position::Right)?;
             // }
-
+            println!("{}", constants::API_URL);
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
