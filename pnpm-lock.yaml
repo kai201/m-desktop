@@ -45,6 +45,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@6.2.2)
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       typescript:
         specifier: ~5.6.2
         version: 5.6.3
@@ -558,6 +561,10 @@ packages:
     peerDependenciesMeta:
       supports-color:
         optional: true
+
+  dotenv@16.4.7:
+    resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
+    engines: {node: '>=12'}
 
   electron-to-chromium@1.5.123:
     resolution: {integrity: sha512-refir3NlutEZqlKaBLK0tzlVLe5P2wDKS7UQt/3SpibizgsRAPOsqQC3ffw1nlv3ze5gjRQZYHoPymgVZkplFA==}
@@ -1101,6 +1108,8 @@ snapshots:
   debug@4.4.0:
     dependencies:
       ms: 2.1.3
+
+  dotenv@16.4.7: {}
 
   electron-to-chromium@1.5.123: {}
 
