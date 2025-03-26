@@ -28,8 +28,6 @@ pub fn window_start(app: AppHandle) {
     if state.is_capture.load(Ordering::Relaxed) {
         return; // 避免重复启动
     }
-    println!("start");
-
     state.is_capture.store(true, Ordering::Relaxed);
     let flag = state.is_capture.clone();
     let win = state.window.clone();
@@ -46,7 +44,7 @@ pub fn window_start(app: AppHandle) {
 
             let vmap = data.lock().unwrap();
             let v: Vec<&str> = vmap
-                .get("append_apps")
+                .get(constants::APP_LIST)
                 .map_or("微信,WeChat", |v| v)
                 .split(",")
                 .collect();

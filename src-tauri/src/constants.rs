@@ -11,3 +11,5 @@ pub const API_URL: &str = "http://wxplus.s.test.meb.im";
 pub const API_URL: &str = "http://test.local";
 
 pub const SESSION_ID: &str = "session_id";
+
+pub const APP_LIST: &str = "app_list";

@@ -4,7 +4,10 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { check } from "@tauri-apps/plugin-updater";
 export { exit, relaunch } from "@tauri-apps/plugin-process";
 
+import { listen } from "@tauri-apps/api/event";
+
 export const checkUpdate = check;
+export const onEvent = listen;
 
 export async function openBrowser(url: string) {
   return await openUrl(url);
@@ -28,6 +31,10 @@ export async function windowCaptureStop(): Promise<boolean> {
 
 export async function windowCaptureStart(): Promise<boolean> {
   return await invoke("window_start");
+}
+
+export async function windowCaptureSend(txt: string): Promise<boolean> {
+  return await invoke("window_send_text", { txt });
 }
 
 export async function getSessionUserId(): Promise<string> {
