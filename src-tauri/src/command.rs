@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
-use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
@@ -14,6 +13,8 @@ use crate::{
     data::AppState,
     winx::{activate, get_active_window, get_windows},
 };
+
+use crate::constants;
 
 // 常量定义
 const CHECK_INTERVAL: Duration = Duration::from_millis(200);
@@ -77,7 +78,7 @@ pub fn get_window_all() -> Vec<ActiveWindow> {
 }
 
 #[tauri::command]
-pub fn send_text(app: AppHandle, txt: String) -> bool {
+pub fn window_send_text(app: AppHandle, txt: String) -> bool {
     let state = app.state::<AppState>();
     let mut guard = state.window.lock().unwrap();
 
@@ -109,19 +110,27 @@ pub async fn background_task_start(app: AppHandle) -> bool {
 
     let session_id = {
         let vmap = data.lock().unwrap();
-        vmap.get(&String::from("session_id")).cloned()
+        vmap.get(constants::SESSION_ID).cloned()
     };
 
-    if session_id == None {
+    if session_id.is_none() {
         return false;
     }
     let mut docs = app.path().document_dir().unwrap();
-    let result = utils::get_json("url").await.unwrap_or(HashMap::new());
+
+    let vers_url = format!(
+        "{}/sys/plus/version/{}/{}",
+        constants::API_URL,
+        std::env::consts::OS.to_string(),
+        std::env::consts::ARCH.to_string()
+    );
+
+    let result = utils::get_json(&vers_url).await.unwrap_or(HashMap::new());
 
     let version = result.get("version").map_or("0.0.0", |v| v);
     let download_url = result.get("download_url").map_or("", |v| v);
 
-    if download_url.len() <= 0 {
+    if download_url.is_empty() {
         return false;
     }
 
@@ -166,4 +175,24 @@ pub fn background_task_stop(app: AppHandle) -> bool {
     *background_task_cli = None;
 
     true
+}
+
+#[tauri::command]
+pub fn set_session_id(app: AppHandle, session_id: String) {
+    let state = app.state::<AppState>();
+
+    let mut data = state.data.lock().unwrap();
+    data.insert(constants::SESSION_ID.to_string(), session_id);
+}
+
+#[tauri::command]
+pub fn get_session_id(app: AppHandle) -> String {
+    let state = app.state::<AppState>();
+
+    let data = state.data.lock().unwrap();
+
+    if let Some(session_id) = data.get(constants::SESSION_ID) {
+        return String::from(session_id);
+    }
+    String::from("")
 }
