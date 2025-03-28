@@ -14,7 +14,7 @@ export default function () {
     console.log(list);
   };
   const handleSend = async () => {
-    let res = await windowCaptureSend("你是谁，你想干嘛....");
+    let res = await windowCaptureSend("你是谁，你想干嘛....",true);
     console.log(res);
   };
   const handleWindowChange = async (val: boolean) => {

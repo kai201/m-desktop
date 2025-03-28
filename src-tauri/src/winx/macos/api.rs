@@ -122,7 +122,10 @@ fn get_windows_informations(only_active: bool) -> Vec<ActiveWindow> {
         }
 
         let app_name = get_cf_string_value(&window_cf_dictionary, "kCGWindowOwnerName");
-        let title = get_cf_string_value(&window_cf_dictionary, "kCGWindowName");
+        let mut title = get_cf_string_value(&window_cf_dictionary, "kCGWindowName");
+        if title.is_empty() {
+            title = app_name.clone();
+        }
 
         let path: String = unsafe {
             match app.bundleURL() {
@@ -151,7 +154,7 @@ fn get_windows_informations(only_active: bool) -> Vec<ActiveWindow> {
         let window_id = get_cf_number_value(&window_cf_dictionary, "kCGWindowNumber");
 
         windows.push(ActiveWindow {
-            app_name: app_name.to_owned(),
+            app_name,
             title,
             win_name,
             window_id: window_id.to_string(),

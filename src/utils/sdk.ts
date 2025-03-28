@@ -33,8 +33,11 @@ export async function windowCaptureStart(): Promise<boolean> {
   return await invoke("window_start");
 }
 
-export async function windowCaptureSend(txt: string): Promise<boolean> {
-  return await invoke("window_send_text", { txt });
+export async function windowCaptureSend(
+  txt: string,
+  isSend = false
+): Promise<boolean> {
+  return await invoke("window_send_text", { txt, send: isSend });
 }
 
 export async function getSessionUserId(): Promise<string> {

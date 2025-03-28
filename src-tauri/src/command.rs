@@ -77,7 +77,7 @@ pub fn get_window_all() -> Vec<ActiveWindow> {
 }
 
 #[tauri::command]
-pub fn window_send_text(app: AppHandle, txt: String) -> bool {
+pub fn window_send_text(app: AppHandle, txt: String, send: bool) -> bool {
     let state = app.state::<AppState>();
     let mut guard = state.window.lock().unwrap();
 
@@ -88,13 +88,16 @@ pub fn window_send_text(app: AppHandle, txt: String) -> bool {
         activate(win.window_id.clone());
         thread::sleep(Duration::from_millis(500));
         let mut opts = Settings::default();
-        opts.open_prompt_to_get_permissions = false;
+        opts.open_prompt_to_get_permissions = true;
         if let Ok(mut enigo) = Enigo::new(&opts).map_err(|e| format!("初始化 Enigo 失败: {}", e))
         {
             enigo
                 .text(&txt)
                 .map_err(|e| format!("输入文本失败: {}", e))
                 .unwrap();
+            if send {
+                let _ = enigo.key(enigo::Key::Return, enigo::Direction::Click);
+            }
             return true;
         }
     }
