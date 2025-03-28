@@ -36,11 +36,11 @@ impl Api for Win32API {
         if let Ok(title) = get_window_title(active_window_hwnd) {
             active_window_title = title;
         }
-        if let Ok(process_path) = get_process_path(process_id) {
-            app_name = get_process_name(&process_path).unwrap();
-        }
+        // if let Ok(process_path) = get_process_path(process_id) {
+        //     app_name = get_process_name(&process_path).unwrap();
+        // }
 
-        if vec![String::from("微信"), String::from("WeChat")].contains(&app_name) {
+        if vec![String::from("微信"), String::from("WeChat")].contains(&active_window_title) {
             if let Ok(title) = get_window_title_wx(active_window_hwnd) {
                 win_name = title;
             }
@@ -63,6 +63,7 @@ impl Api for Win32API {
         enum_desktop_windows(|hwnd| {
             let active_window_position = get_window_position(hwnd).unwrap();
             let mut active_window_title = String::from("");
+            let mut app_name = String::from("");
 
             if let Ok(window_title) = get_window_title(hwnd) {
                 active_window_title = window_title;
@@ -71,8 +72,8 @@ impl Api for Win32API {
             let mut process_id: u32 = 0;
             unsafe { GetWindowThreadProcessId(hwnd, Some(&mut process_id as *mut u32)) };
 
-            let process_path = get_process_path(process_id).unwrap();
-            let app_name = get_process_name(&process_path).unwrap();
+            // let process_path = get_process_path(process_id).unwrap();
+            // app_name = get_process_name(&process_path).unwrap();
             // format!("0x{:X}", hwnd.0 as usize)
             let active_window = ActiveWindow {
                 title: active_window_title,
