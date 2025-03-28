@@ -52,6 +52,7 @@ pub fn window_start(app: AppHandle) {
 
             if !v.contains(&app_name.as_str()) {
                 thread::sleep(CHECK_INTERVAL);
+                app.emit("capture", ActiveWindow::default()).unwrap();
                 *win.lock().unwrap() = None;
                 continue;
             }
