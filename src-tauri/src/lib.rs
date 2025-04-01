@@ -23,7 +23,11 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .manage(data::AppState::default())
-        .setup(|_app| Ok(()))
+        .setup(|app| {
+            let handle = app.handle();
+            command::background_task(&handle.clone());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_window_all,
             window_start,

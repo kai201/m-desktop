@@ -21,53 +21,92 @@ const CHECK_INTERVAL: Duration = Duration::from_millis(200);
 const CAPTURE_INTERVAL: Duration = Duration::from_millis(600);
 // const TARGET_APPS: [&str; 4] = ["微信", "WeChat", "企业微信", "钉钉"];
 
+pub fn background_task(app: &AppHandle) {
+    let binding = app.clone();
+    let state = binding.state::<AppState>();
+    let flag = state.is_running.clone();
+    let win = state.window.clone();
+    let data = state.data.clone();
+
+    tauri::async_runtime::spawn_blocking(move || loop {
+        if !flag.load(Ordering::Relaxed) {
+            thread::sleep(CHECK_INTERVAL);
+            continue;
+        }
+        let active_window = get_active_window();
+        if std::process::id() == active_window.process_id {
+            thread::sleep(CHECK_INTERVAL);
+            continue;
+        }
+
+        let vmap = data.lock().unwrap();
+        let v: Vec<&str> = vmap
+            .get(constants::APP_LIST)
+            .map_or("微信,WeChat", |v| v)
+            .split(",")
+            .collect();
+        let app_name = active_window.app_name.clone();
+
+        if !v.contains(&app_name.as_str()) {
+            binding.emit("capture", ActiveWindow::default()).unwrap();
+            *win.lock().unwrap() = None;
+            thread::sleep(CHECK_INTERVAL);
+            continue;
+        }
+
+        binding.emit("capture", active_window.clone()).unwrap();
+        *win.lock().unwrap() = Some(active_window);
+        thread::sleep(CAPTURE_INTERVAL);
+    });
+}
+
 #[tauri::command]
 pub fn window_start(app: AppHandle) {
     let state = app.state::<AppState>();
 
-    if state.is_capture.load(Ordering::Relaxed) {
+    if state.is_running.load(Ordering::Relaxed) {
         return; // 避免重复启动
     }
-    state.is_capture.store(true, Ordering::Relaxed);
-    let flag = state.is_capture.clone();
-    let win = state.window.clone();
-    let data = state.data.clone();
+    state.is_running.store(false, Ordering::Relaxed);
+    // let flag = state.is_running.clone();
+    // let win = state.window.clone();
+    // let data = state.data.clone();
 
-    thread::spawn(move || {
-        while flag.load(Ordering::Relaxed) {
-            let active_window = get_active_window();
+    // thread::spawn(move || {
+    //     while flag.load(Ordering::Relaxed) {
+    //         let active_window = get_active_window();
 
-            if std::process::id() == active_window.process_id {
-                thread::sleep(CHECK_INTERVAL);
-                continue;
-            }
+    //         if std::process::id() == active_window.process_id {
+    //             thread::sleep(CHECK_INTERVAL);
+    //             continue;
+    //         }
 
-            let vmap = data.lock().unwrap();
-            let v: Vec<&str> = vmap
-                .get(constants::APP_LIST)
-                .map_or("微信,WeChat", |v| v)
-                .split(",")
-                .collect();
-            let app_name = active_window.app_name.clone();
+    //         let vmap = data.lock().unwrap();
+    //         let v: Vec<&str> = vmap
+    //             .get(constants::APP_LIST)
+    //             .map_or("微信,WeChat", |v| v)
+    //             .split(",")
+    //             .collect();
+    //         let app_name = active_window.app_name.clone();
 
-            if !v.contains(&app_name.as_str()) {
-                thread::sleep(CHECK_INTERVAL);
-                app.emit("capture", ActiveWindow::default()).unwrap();
-                *win.lock().unwrap() = None;
-                continue;
-            }
+    //         if !v.contains(&app_name.as_str()) {
+    //             thread::sleep(CHECK_INTERVAL);
+    //             app.emit("capture", ActiveWindow::default()).unwrap();
+    //             *win.lock().unwrap() = None;
+    //             continue;
+    //         }
 
-            app.emit("capture", active_window.clone()).unwrap();
-            *win.lock().unwrap() = Some(active_window);
-            thread::sleep(CAPTURE_INTERVAL);
-        }
-    });
+    //         app.emit("capture", active_window.clone()).unwrap();
+    //         *win.lock().unwrap() = Some(active_window);
+    //         thread::sleep(CAPTURE_INTERVAL);
+    //     }
+    // });
 }
 
 #[tauri::command]
 pub fn window_stop(app: AppHandle) {
     let state = app.state::<AppState>();
-    state.is_capture.store(false, Ordering::Relaxed);
+    state.is_running.store(false, Ordering::Relaxed);
 }
 
 #[tauri::command]
