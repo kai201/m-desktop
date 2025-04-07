@@ -67,40 +67,7 @@ pub fn window_start(app: AppHandle) {
     if state.is_running.load(Ordering::Relaxed) {
         return; // 避免重复启动
     }
-    state.is_running.store(false, Ordering::Relaxed);
-    // let flag = state.is_running.clone();
-    // let win = state.window.clone();
-    // let data = state.data.clone();
-
-    // thread::spawn(move || {
-    //     while flag.load(Ordering::Relaxed) {
-    //         let active_window = get_active_window();
-
-    //         if std::process::id() == active_window.process_id {
-    //             thread::sleep(CHECK_INTERVAL);
-    //             continue;
-    //         }
-
-    //         let vmap = data.lock().unwrap();
-    //         let v: Vec<&str> = vmap
-    //             .get(constants::APP_LIST)
-    //             .map_or("微信,WeChat", |v| v)
-    //             .split(",")
-    //             .collect();
-    //         let app_name = active_window.app_name.clone();
-
-    //         if !v.contains(&app_name.as_str()) {
-    //             thread::sleep(CHECK_INTERVAL);
-    //             app.emit("capture", ActiveWindow::default()).unwrap();
-    //             *win.lock().unwrap() = None;
-    //             continue;
-    //         }
-
-    //         app.emit("capture", active_window.clone()).unwrap();
-    //         *win.lock().unwrap() = Some(active_window);
-    //         thread::sleep(CAPTURE_INTERVAL);
-    //     }
-    // });
+    state.is_running.store(false, Ordering::Relaxed); 
 }
 
 #[tauri::command]
