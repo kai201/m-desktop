@@ -25,6 +25,7 @@
   "bundle": {
     "createUpdaterArtifacts": true,
     "active": true,
+    "useLocalToolsDir": true,
     "targets": [
       "nsis"
     ],
@@ -43,6 +44,9 @@
         "installMode": "perMachine",
         "startMenuFolder": "MEB",
         "displayLanguageSelector": true,
+        "customLanguageFiles": {
+          "simpchinese": "templates/languages/SimpChinese.nsh"
+        },
         "languages": [
           "english",
           "simpchinese"
@@ -54,7 +58,9 @@
     "deep-link": {
       "windowsProtocol": true,
       "desktop": {
-        "schemes": ["ahelp"]
+        "schemes": [
+          "ahelp"
+        ]
       }
     },
     "updater": {
