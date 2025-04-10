@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
+use std::env;
 
 use enigo::{Enigo, Keyboard, Settings};
 use std::sync::atomic::Ordering;
@@ -116,6 +117,8 @@ pub async fn background_task_start(app: AppHandle) -> bool {
     let data = binding.data.clone();
     let background_task_cli = binding.background_task.clone();
 
+    let new_dir = env::current_exe().unwrap();
+    println!("当前工作目录: {}", new_dir.display());
     let session_id = {
         let vmap = data.lock().unwrap();
         vmap.get(constants::SESSION_ID).cloned()
@@ -156,9 +159,9 @@ pub async fn background_task_start(app: AppHandle) -> bool {
 
         let child = Command::new(program)
             .args(["-u", &session_id.unwrap()])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
             .spawn();
 
         if let Ok(n) = child {

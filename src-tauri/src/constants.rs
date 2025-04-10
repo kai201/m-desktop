@@ -4,7 +4,7 @@ pub const API_URL: &str = "https://api.example.com";
 
 // 开发环境常量
 #[cfg(feature = "dev")]
-pub const API_URL: &str = "http://wxplus.s.test.meb.im";
+pub const API_URL: &str = "https://whelp.t.meierbei.cn/";
 
 // 测试环境常量
 #[cfg(feature = "test")]

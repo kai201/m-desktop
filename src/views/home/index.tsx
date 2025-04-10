@@ -1,6 +1,9 @@
 import {
+  appStart,
+  appStop,
   getWindows,
   onEvent,
+  setSessionUserId,
   windowCaptureSend,
   windowCaptureStart,
   windowCaptureStop,
@@ -14,7 +17,7 @@ export default function () {
     console.log(list);
   };
   const handleSend = async () => {
-    let res = await windowCaptureSend("你是谁，你想干嘛....",true);
+    let res = await windowCaptureSend("你是谁，你想干嘛....", true);
     console.log(res);
   };
   const handleWindowChange = async (val: boolean) => {
@@ -23,6 +26,17 @@ export default function () {
       console.log(res);
     } else {
       let res = await windowCaptureStop();
+      console.log(res);
+    }
+  };
+
+  const handleWxPlusChange = async (val: boolean) => {
+    await setSessionUserId("110")
+    if (val) {
+      let res = await appStart();
+      console.log(res);
+    } else {
+      let res = await appStop();
       console.log(res);
     }
   };
@@ -52,11 +66,11 @@ export default function () {
       <Flex gap={"customize"}>
         <div>
           <label>窗口订阅</label>
-          <Switch defaultChecked onChange={handleWindowChange} />
+          <Switch onChange={handleWindowChange} />
         </div>
         <div>
           <label>后台任务</label>
-          <Switch defaultChecked />
+          <Switch onChange={handleWxPlusChange} />
         </div>
       </Flex>
       <Divider />
