@@ -68,7 +68,7 @@ pub fn window_start(app: AppHandle) {
     if state.is_running.load(Ordering::Relaxed) {
         return; // 避免重复启动
     }
-    state.is_running.store(false, Ordering::Relaxed); 
+    state.is_running.store(true, Ordering::Relaxed); 
 }
 
 #[tauri::command]
