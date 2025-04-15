@@ -4,6 +4,8 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { check } from "@tauri-apps/plugin-updater";
 export { exit, relaunch } from "@tauri-apps/plugin-process";
 
+import { enable } from "tauri-plugin-wxmessage-api";
+
 import { listen } from "@tauri-apps/api/event";
 
 export const checkUpdate = check;
@@ -14,14 +16,18 @@ export async function openBrowser(url: string) {
 }
 
 export async function appStart(): Promise<boolean> {
-  return await invoke("background_task_start");
+  // return await invoke("background_task_start");
+
+  return await invoke('plugin:wxmessage|enable', { args: ["-a"] });
 }
 
 export async function appStop(): Promise<boolean> {
-  return await invoke("background_task_stop");
+  // return await invoke("background_task_stop");
+  return await invoke('plugin:wxmessage|disable');
 }
 
 export async function getWindows() {
+  // return await invoke('plugin:wxmessage|enable', { args: ["-a"] });
   return await invoke("get_window_all");
 }
 

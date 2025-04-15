@@ -31,7 +31,7 @@ export default function () {
   };
 
   const handleWxPlusChange = async (val: boolean) => {
-    await setSessionUserId("110")
+    // await setSessionUserId("110")
     if (val) {
       let res = await appStart();
       console.log(res);
