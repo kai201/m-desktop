@@ -63,7 +63,9 @@
       }
     },
     "wxmessage": {
-      "endpoints": ["https://whelp.t.meierbei.cn/sys/plus/version/{{target}}/{{arch}}"]
+      "endpoints": [
+        "https://cdn.ares-ai.cn/apps/wxplus/test/{{target}}_{{arch}}_latest.json"
+      ]
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM3NjAxMjk2MjZDQUQ1MTMKUldRVDFjb21saEpneHkzaHlCelNvOGJZUGc2RmdPeDZXZG4wRUk3T2o3Q0t1SVd5K01LN0pQWHMK",

@@ -147,7 +147,10 @@ impl<R: Runtime> Wxmessage<R> {
         if !plugins_path.exists() {
             std::fs::create_dir_all(&plugins_path)?;
         }
-
+        
+        #[cfg(target_os = "windows")]
+        plugins_path.push(format!("wxmessage-{}.exe", server_version.version));
+        #[cfg(target_os = "macos")]
         plugins_path.push(format!("wxmessage-{}", server_version.version));
 
         if !plugins_path.exists() {
@@ -299,15 +302,15 @@ async fn check_update(endpoints: Vec<Url>) -> crate::Result<Option<ServerVersion
         let response = reqwest::get(url).await?;
         if response.status().is_success() {
             let body = response.json::<HashMap<String, String>>().await?;
-
-            let s = body.get("download_url");
-            if !s.is_none() {
-                let sv = ServerVersion {
-                    version: body.get("version").unwrap().to_string(),
-                    download_url: s.unwrap().to_string(),
-                };
-                return Ok(Some(sv));
+            if body.is_empty() {
+                continue;
             }
+
+            let sv = ServerVersion {
+                version: body.get("version").unwrap().to_string(),
+                download_url: body.get("download_url").unwrap().to_string(),
+            };
+            return Ok(Some(sv));
         }
     }
     Ok(None)

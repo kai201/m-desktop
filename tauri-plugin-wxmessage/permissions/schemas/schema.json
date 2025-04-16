@@ -297,44 +297,37 @@
         {
           "description": "Enables the disable command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-disable",
-          "markdownDescription": "Enables the disable command without any pre-configured scope."
+          "const": "allow-disable"
         },
         {
           "description": "Denies the disable command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-disable",
-          "markdownDescription": "Denies the disable command without any pre-configured scope."
+          "const": "deny-disable"
         },
         {
           "description": "Enables the enable command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-enable",
-          "markdownDescription": "Enables the enable command without any pre-configured scope."
+          "const": "allow-enable"
         },
         {
           "description": "Denies the enable command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-enable",
-          "markdownDescription": "Denies the enable command without any pre-configured scope."
+          "const": "deny-enable"
         },
         {
           "description": "Enables the is_enabled command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-is-enabled",
-          "markdownDescription": "Enables the is_enabled command without any pre-configured scope."
+          "const": "allow-is-enabled"
         },
         {
           "description": "Denies the is_enabled command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-is-enabled",
-          "markdownDescription": "Denies the is_enabled command without any pre-configured scope."
+          "const": "deny-is-enabled"
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-enable`\n- `allow-disable`\n- `allow-is-enabled`",
+          "description": "Default permissions for the plugin",
           "type": "string",
-          "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-enable`\n- `allow-disable`\n- `allow-is-enabled`"
+          "const": "default"
         }
       ]
     }
