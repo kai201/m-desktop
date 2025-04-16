@@ -1,3 +1,4 @@
+import { getUploadUrl, Upload } from "@/api/commom";
 import {
   appStart,
   appStop,
@@ -8,7 +9,7 @@ import {
   windowCaptureStart,
   windowCaptureStop,
 } from "@/utils/sdk";
-import { Button, Col, Divider, Flex, Row, Switch } from "antd";
+import { Button, Col, Divider, Flex, Input, Row, Switch } from "antd";
 import { useEffect } from "react";
 
 export default function () {
@@ -39,6 +40,20 @@ export default function () {
       let res = await appStop();
       console.log(res);
     }
+  };
+
+  const handleFile = async (e: any) => {
+    let file = e.target.files[0];
+    // let reader = new FileReader();
+    // reader.readAsDataURL(file);
+    let url = await getUploadUrl()
+
+    console.log(url);
+    await Upload(url, file)
+    // reader.onload = async () => {
+    //   console.log(url);
+    //   await Upload(url, reader.result)
+    // };
   };
 
   useEffect(() => {
@@ -77,6 +92,10 @@ export default function () {
       <Flex gap={"customize"}>
         <Button onClick={handleWindow}>获取窗口</Button>
         <Button onClick={handleSend}>发送文本</Button>
+      </Flex>
+      <Divider />
+      <Flex gap={"customize"}>
+        <Input type="file" onChange={handleFile} />
       </Flex>
     </div>
   );

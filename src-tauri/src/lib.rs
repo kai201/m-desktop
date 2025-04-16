@@ -19,6 +19,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_wxmessage::init())
         .setup(|_app| Ok(()))
         .invoke_handler(tauri::generate_handler![])

@@ -9,7 +9,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
     },
-    thread::sleep,
+    time::Duration,
 };
 use tauri::{
     plugin::{Builder, TauriPlugin},
@@ -46,14 +46,18 @@ pub fn init<R: Runtime>() -> TauriPlugin<R, Config> {
         ])
         .setup(move |app, api| {
             let config = api.config().clone();
+
             let wxmessage = Wxmessage {
                 config,
                 is_running: Arc::new(AtomicBool::new(false)),
                 app: app.clone(),
                 ps: ChildStore::default(),
             };
-            println!("{}", wxmessage.config.endpoints.len());
+
             app.manage(wxmessage);
+
+            background_task(app.clone());
+
             Ok(())
         })
         .on_event(|app, event| {
@@ -82,34 +86,10 @@ pub struct Wxmessage<R: Runtime> {
 
 impl<R: Runtime> Wxmessage<R> {
     pub fn is_enabled(&self) -> crate::Result<bool> {
-        let mut guard = self.ps.lock().unwrap();
-        if let Some(mut child) = guard.take() {
-            match child.try_wait() {
-                Ok(Some(status)) => {
-                    println!("子进程已退出，状态: {:?}", status);
-                    self.is_running.store(false, Ordering::Relaxed);
-                }
-                Ok(None) => {
-                    // 子进程未结束，继续等待
-                }
-                Err(e) => {
-                    eprintln!("错误: {}", e);
-                    self.is_running.store(false, Ordering::Relaxed);
-                    // 清除子进程
-                    *guard = None;
-                }
-            }
-        }
-
         Ok(self.is_running.load(Ordering::Relaxed))
     }
 
     pub fn disable(&self) -> crate::Result<()> {
-        let mut guard = self.ps.lock().unwrap();
-        if let Some(mut child) = guard.take() {
-            println!("kill");
-            let _ = child.kill();
-        }
         self.is_running.store(false, Ordering::Relaxed);
         Ok(())
     }
@@ -118,6 +98,7 @@ impl<R: Runtime> Wxmessage<R> {
         if self.is_running.load(Ordering::Relaxed) {
             return Ok(()); // 避免重复启动
         }
+
         self.is_running.store(true, Ordering::Relaxed);
 
         let executable_path = current_exe()?;
@@ -134,7 +115,7 @@ impl<R: Runtime> Wxmessage<R> {
 
         let endpoints = self.config.endpoints.clone();
 
-        let server_version = check_update(endpoints).await?;
+        let server_version = get_server_version(endpoints).await?;
 
         if server_version.is_none() {
             self.is_running.store(false, Ordering::Relaxed);
@@ -147,7 +128,7 @@ impl<R: Runtime> Wxmessage<R> {
         if !plugins_path.exists() {
             std::fs::create_dir_all(&plugins_path)?;
         }
-        
+
         #[cfg(target_os = "windows")]
         plugins_path.push(format!("wxmessage-{}.exe", server_version.version));
         #[cfg(target_os = "macos")]
@@ -161,6 +142,7 @@ impl<R: Runtime> Wxmessage<R> {
                 return Ok(());
             }
         }
+
         let mut command = Command::new(plugins_path);
         command.args(&args);
         command.stdout(Stdio::inherit());
@@ -169,42 +151,71 @@ impl<R: Runtime> Wxmessage<R> {
         let child = command.spawn()?;
         let mut guard = self.ps.lock().unwrap();
         *guard = Some(child);
-
-        // 创建一个新线程来监听子进程退出
-        // let is_running_clone = self.is_running.clone();
-        // let ps_clone = self.ps.clone();
-
-        // std::thread::spawn(move || {
-        //     while is_running_clone.load(Ordering::Relaxed) {
-        //         // 获取子进程的引用
-        //         let mut guard = ps_clone.lock().unwrap();
-        //         if let Some(ref mut child) = *guard {
-        //             match child.try_wait() {
-        //                 Ok(Some(status)) => {
-        //                     println!("Child process exited with status: {}", status);
-        //                 }
-        //                 Ok(None) => {
-        //                     // 子进程未结束，继续等待
-        //                 }
-        //                 Err(_) => {
-        //                     // 子进程结束后，将is_running设置为false
-        //                     is_running_clone.store(false, Ordering::Relaxed);
-        //                     // 清除子进程
-        //                     *guard = None;
-        //                 }
-        //             }
-
-        //             sleep(std::time::Duration::from_millis(1));
-        //             // 子进程结束后，将is_running设置为false
-        //             // is_running_clone.store(false, Ordering::Relaxed);
-        //             // // 清除子进程
-        //             // *guard = None;
-        //         }
-        //     }
-        // });
-
         Ok(())
     }
+
+    pub async fn check_update(&self) -> crate::Result<bool> {
+        let endpoints = self.config.endpoints.clone();
+        let server_version = get_server_version(endpoints).await?;
+        if server_version.is_none() {
+            return Ok(false);
+        }
+
+        let executable_path = current_exe()?;
+        // Get the extract_path from the provided executable_path
+        let mut cli_path = if cfg!(target_os = "linux") {
+            executable_path
+        } else {
+            extract_path_from_executable(&executable_path)?
+        };
+
+        cli_path.push("plugins");
+
+        let sv = server_version.unwrap();
+
+        #[cfg(target_os = "windows")]
+        cli_path.push(format!("wxmessage-{}.exe", sv.version));
+        #[cfg(target_os = "macos")]
+        cli_path.push(format!("wxmessage-{}", sv.version));
+
+        if cli_path.exists() {
+            return Ok(true);
+        }
+        Ok(false)
+    }
+}
+
+fn background_task<R: Runtime>(app: AppHandle<R>) {
+    let handle = app.clone();
+    std::thread::spawn(move || loop {
+        let wx = handle.state::<Wxmessage<R>>();
+        let is_running = wx.is_enabled().unwrap();
+
+        if is_running {
+            let mut guard = wx.ps.lock().unwrap();
+            if let Some(ref mut child) = *guard {
+                match child.try_wait() {
+                    Ok(Some(_status)) => {
+                        wx.is_running.store(false, Ordering::Relaxed);
+                        *guard = None;
+                    }
+                    Ok(None) => {}
+                    Err(_) => {
+                        wx.is_running.store(false, Ordering::Relaxed);
+                        *guard = None;
+                    }
+                }
+            }
+        } else {
+            let mut guard = wx.ps.lock().unwrap();
+            if let Some(ref mut child) = *guard {
+                let _ = child.kill();
+                *guard = None;
+            }
+        }
+
+        std::thread::sleep(Duration::from_secs(1));
+    });
 }
 
 pub fn extract_path_from_executable(executable_path: &Path) -> Result<PathBuf> {
@@ -275,16 +286,33 @@ pub fn get_updater_arch() -> Option<String> {
     }
 }
 
-async fn check_update(endpoints: Vec<Url>) -> crate::Result<Option<ServerVersion>> {
+async fn download(url: &String, target: &Path) -> crate::Result<()> {
+    let response = reqwest::get(url).await?;
+    // 检查请求是否成功
+    if response.status().is_success() {
+        // 创建文件并写入内容
+        let mut file = File::create(target)?;
+
+        let content = response.bytes().await?;
+
+        copy(&mut content.as_ref(), &mut file)?;
+
+        #[cfg(target_os = "macos")]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let permissions = Permissions::from_mode(0755);
+            std::fs::set_permissions(target, permissions)?;
+        }
+    }
+    Ok(())
+}
+
+async fn get_server_version(endpoints: Vec<Url>) -> crate::Result<Option<ServerVersion>> {
     let version = "1.0.0";
-    // 使用percent_encoding库进行URL编码
-    // let encoded_version = percent_encoding::percent_encode(
-    //     version.as_bytes(),
-    //     percent_encoding::NON_ALPHANUMERIC
-    // ).to_string();
+
     let target = get_updater_target().unwrap();
     let arch = get_updater_arch().unwrap();
-    // // TODO: check if the url is valid
+
     for url in &endpoints {
         let url: Url = url
             .to_string()
@@ -313,26 +341,6 @@ async fn check_update(endpoints: Vec<Url>) -> crate::Result<Option<ServerVersion
             return Ok(Some(sv));
         }
     }
+
     Ok(None)
-}
-
-async fn download(url: &String, target: &Path) -> crate::Result<()> {
-    let response = reqwest::get(url).await?;
-    // 检查请求是否成功
-    if response.status().is_success() {
-        // 创建文件并写入内容
-        let mut file = File::create(target)?;
-
-        let content = response.bytes().await?;
-
-        copy(&mut content.as_ref(), &mut file)?;
-
-        #[cfg(target_os = "macos")]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let permissions = Permissions::from_mode(0755);
-            std::fs::set_permissions(target, permissions)?;
-        }
-    }
-    Ok(())
 }

@@ -20,6 +20,9 @@ importers:
       '@tauri-apps/plugin-deep-link':
         specifier: ~2
         version: 2.2.0
+      '@tauri-apps/plugin-http':
+        specifier: ~2
+        version: 2.4.3
       '@tauri-apps/plugin-opener':
         specifier: ^2
         version: 2.2.6
@@ -39,8 +42,8 @@ importers:
         specifier: ^1.8.4
         version: 1.8.4
       axios-tauri-api-adapter:
-        specifier: ^2.0.6
-        version: 2.0.6
+        specifier: 2.0.3
+        version: 2.0.3
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -800,8 +803,8 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
-  axios-tauri-api-adapter@2.0.6:
-    resolution: {integrity: sha512-VhoCtu+oZBZlFUAWIOEmIwZtp9/39oUzBo0fOutjB8wv0Y0P0HfLdZmGKsq0nvysAm661Cxy3hFZz/QTypxmCQ==}
+  axios-tauri-api-adapter@2.0.3:
+    resolution: {integrity: sha512-WSsVXYrTT2QI+WETsbf4TWqxVb79PZG8R17o9weG9R43Qj2HGBo5kOdHWg1/QgeDCOXy8VDo+nv10NBw2JjSgg==}
     engines: {node: '>=16', pnpm: '>=7'}
 
   axios@1.8.4:
@@ -2194,7 +2197,7 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios-tauri-api-adapter@2.0.6:
+  axios-tauri-api-adapter@2.0.3:
     dependencies:
       '@tauri-apps/plugin-http': 2.4.3
       axios: 1.8.4
