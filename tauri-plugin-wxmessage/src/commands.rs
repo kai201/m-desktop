@@ -16,5 +16,5 @@ pub(crate) async fn disable<R: Runtime>(app: AppHandle<R>) -> Result<()> {
 #[command]
 pub(crate) async fn enable<R: Runtime>(app: AppHandle<R>, args: Vec<String>) -> Result<()> {
     println!("enable: {:?}", args);
-    app.wxmessage().enable(args).await
+    app.wxmessage().enable(args)
 }

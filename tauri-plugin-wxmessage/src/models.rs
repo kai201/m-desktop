@@ -6,3 +6,9 @@ pub struct ServerVersion {
     pub version: String,
     pub download_url: String,
 }
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct CrrentVersion {
+    pub version: String,
+    pub executable_path: String,
+}

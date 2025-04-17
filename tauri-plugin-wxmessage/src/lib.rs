@@ -12,6 +12,7 @@ use std::{
     time::Duration,
 };
 use tauri::{
+    async_runtime,
     plugin::{Builder, TauriPlugin},
     utils::platform::current_exe,
     AppHandle, Manager, RunEvent, Runtime, Url,
@@ -20,7 +21,7 @@ mod commands;
 mod config;
 mod error;
 mod models;
-use crate::models::ServerVersion;
+use crate::models::{CrrentVersion, ServerVersion};
 pub use error::{Error, Result};
 use std::io::copy;
 type ChildStore = Arc<Mutex<Option<Child>>>;
@@ -52,6 +53,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R, Config> {
                 is_running: Arc::new(AtomicBool::new(false)),
                 app: app.clone(),
                 ps: ChildStore::default(),
+                params: Mutex::new(vec![]),
+                version: Mutex::new(None),
             };
 
             app.manage(wxmessage);
@@ -82,6 +85,8 @@ pub struct Wxmessage<R: Runtime> {
     config: Config,
     app: AppHandle<R>,
     ps: ChildStore,
+    params: Mutex<Vec<String>>,
+    version: Mutex<Option<CrrentVersion>>,
 }
 
 impl<R: Runtime> Wxmessage<R> {
@@ -94,73 +99,87 @@ impl<R: Runtime> Wxmessage<R> {
         Ok(())
     }
 
-    pub async fn enable(&self, args: Vec<String>) -> crate::Result<()> {
+    pub fn enable(&self, args: Vec<String>) -> crate::Result<()> {
         if self.is_running.load(Ordering::Relaxed) {
             return Ok(()); // 避免重复启动
         }
 
         self.is_running.store(true, Ordering::Relaxed);
 
-        let executable_path = current_exe()?;
-        // Get the extract_path from the provided executable_path
-        let mut plugins_path = if cfg!(target_os = "linux") {
-            executable_path
-        } else {
-            extract_path_from_executable(&executable_path)?
-        };
-
-        plugins_path.push("plugins");
-
-        println!("{}", plugins_path.display());
-
-        let endpoints = self.config.endpoints.clone();
-
-        let server_version = get_server_version(endpoints).await?;
-
-        if server_version.is_none() {
-            self.is_running.store(false, Ordering::Relaxed);
-            println!("No update available");
-            return Ok(());
+        if args.len() > 0 {
+            let mut params = self.params.lock().unwrap();
+            params.clear();
+            params.extend(args);
         }
 
-        let server_version = server_version.unwrap();
+        // let _ = self.restart().await?;
 
-        if !plugins_path.exists() {
-            std::fs::create_dir_all(&plugins_path)?;
+        Ok(())
+    }
+
+    async fn restart(&self) -> crate::Result<()> {
+        // let executable_path = current_exe()?;
+        // // Get the extract_path from the provided executable_path
+        // let mut plugins_path = if cfg!(target_os = "linux") {
+        //     executable_path
+        // } else {
+        //     extract_path_from_executable(&executable_path)?
+        // };
+
+        // plugins_path.push("plugins");
+
+        // println!("{}", plugins_path.display());
+
+        // let endpoints = self.config.endpoints.clone();
+
+        // let server_version = get_server_version(endpoints).await?;
+
+        // if server_version.is_none() {
+        //     self.is_running.store(false, Ordering::Relaxed);
+        //     println!("No update available");
+        //     return Ok(());
+        // }
+
+        // let server_version = server_version.unwrap();
+
+        // if !plugins_path.exists() {
+        //     std::fs::create_dir_all(&plugins_path)?;
+        // }
+
+        // #[cfg(target_os = "windows")]
+        // plugins_path.push(format!("wxmessage-{}.exe", server_version.version));
+        // #[cfg(target_os = "macos")]
+        // plugins_path.push(format!("wxmessage-{}", server_version.version));
+
+        // if !plugins_path.exists() {
+        //     let rs = download(&server_version.download_url, &plugins_path).await;
+        //     if rs.is_err() {
+        //         println!("download failed");
+        //         self.is_running.store(false, Ordering::Relaxed);
+        //         return Ok(());
+        //     }
+        // }
+        println!("restart");
+        let version = { self.version.lock().unwrap().clone() };
+
+        if let Some(ver) = version {
+            let mut guard = self.ps.lock().unwrap();
+            let args = self.params.lock().unwrap();
+            let mut command = Command::new(ver.executable_path);
+            command.args(&args.clone());
+            command.stdout(Stdio::inherit());
+            command.stderr(Stdio::inherit());
+            // 启动子进程
+            let child = command.spawn()?;
+            *guard = Some(child);
         }
-
-        #[cfg(target_os = "windows")]
-        plugins_path.push(format!("wxmessage-{}.exe", server_version.version));
-        #[cfg(target_os = "macos")]
-        plugins_path.push(format!("wxmessage-{}", server_version.version));
-
-        if !plugins_path.exists() {
-            let rs = download(&server_version.download_url, &plugins_path).await;
-            if rs.is_err() {
-                println!("download failed");
-                self.is_running.store(false, Ordering::Relaxed);
-                return Ok(());
-            }
-        }
-
-        let mut command = Command::new(plugins_path);
-        command.args(&args);
-        command.stdout(Stdio::inherit());
-        command.stderr(Stdio::inherit());
-        // 启动子进程
-        let child = command.spawn()?;
-        let mut guard = self.ps.lock().unwrap();
-        *guard = Some(child);
         Ok(())
     }
 
     pub async fn check_update(&self) -> crate::Result<bool> {
         let endpoints = self.config.endpoints.clone();
         let server_version = get_server_version(endpoints).await?;
-        if server_version.is_none() {
-            return Ok(false);
-        }
-
+        println!("{:?}", server_version);
         let executable_path = current_exe()?;
         // Get the extract_path from the provided executable_path
         let mut cli_path = if cfg!(target_os = "linux") {
@@ -171,50 +190,81 @@ impl<R: Runtime> Wxmessage<R> {
 
         cli_path.push("plugins");
 
-        let sv = server_version.unwrap();
+        match server_version {
+            Some(sv) => {
+                let crrent_version = { self.version.lock().unwrap().clone() };
+                if let Some(cv) = crrent_version {
+                    if cv.version == sv.version {
+                        return Ok(false);
+                    }
+                }
 
-        #[cfg(target_os = "windows")]
-        cli_path.push(format!("wxmessage-{}.exe", sv.version));
-        #[cfg(target_os = "macos")]
-        cli_path.push(format!("wxmessage-{}", sv.version));
+                #[cfg(target_os = "windows")]
+                cli_path.push(format!("wxmessage-{}.exe", sv.version));
+                #[cfg(target_os = "macos")]
+                cli_path.push(format!("wxmessage-{}", sv.version));
 
-        if cli_path.exists() {
-            return Ok(true);
+                if !cli_path.exists() {
+                    let rs = download(&sv.download_url, &cli_path).await;
+                    if rs.is_err() {
+                        return Ok(false);
+                    }
+                }
+
+                self.version.lock().unwrap().replace(CrrentVersion {
+                    version: sv.version,
+                    executable_path: cli_path.to_str().unwrap().to_string(),
+                });
+                Ok(true)
+            }
+            None => {
+                return Ok(false);
+            }
         }
-        Ok(false)
     }
 }
 
 fn background_task<R: Runtime>(app: AppHandle<R>) {
     let handle = app.clone();
-    std::thread::spawn(move || loop {
-        let wx = handle.state::<Wxmessage<R>>();
-        let is_running = wx.is_enabled().unwrap();
+    println!("background_task");
 
-        if is_running {
-            let mut guard = wx.ps.lock().unwrap();
-            if let Some(ref mut child) = *guard {
-                match child.try_wait() {
-                    Ok(Some(_status)) => {
-                        wx.is_running.store(false, Ordering::Relaxed);
-                        *guard = None;
-                    }
-                    Ok(None) => {}
-                    Err(_) => {
-                        wx.is_running.store(false, Ordering::Relaxed);
-                        *guard = None;
+    async_runtime::spawn(async move {
+        loop {
+            let wx = handle.state::<Wxmessage<R>>();
+            let is_running = wx.is_enabled().unwrap();
+            println!("is_running {}", is_running);
+            if is_running {
+                if let Ok(updated) = wx.check_update().await {
+                    if updated {
+                        println!("update success");
+                        let _ = wx.restart().await;
+                        continue;
                     }
                 }
+                let mut guard = wx.ps.lock().unwrap();
+                if let Some(ref mut child) = *guard {
+                    match child.try_wait() {
+                        Ok(Some(_status)) => {
+                            wx.is_running.store(false, Ordering::Relaxed);
+                            *guard = None;
+                        }
+                        Ok(None) => {}
+                        Err(_) => {
+                            wx.is_running.store(false, Ordering::Relaxed);
+                            *guard = None;
+                        }
+                    }
+                }
+            } else {
+                let mut guard = wx.ps.lock().unwrap();
+                if let Some(ref mut child) = *guard {
+                    let _ = child.kill();
+                    *guard = None;
+                }
             }
-        } else {
-            let mut guard = wx.ps.lock().unwrap();
-            if let Some(ref mut child) = *guard {
-                let _ = child.kill();
-                *guard = None;
-            }
-        }
 
-        std::thread::sleep(Duration::from_secs(1));
+            std::thread::sleep(Duration::from_secs(1));
+        }
     });
 }
 
